@@ -1,5 +1,7 @@
 const { User } = require("../models");
 const {encryptPwd, decryptPwd} = require('../helpers/bcrypt');
+const tokenGenerator = require('../helpers/jwt');
+
 
 
 class UserController {
@@ -49,10 +51,15 @@ class UserController {
     static async login(req, res) {
         try {
             const { email, password } = req.body
-            let userFound = await User.findOne({ where: { email } })
+            let userFound = await User.findOne({ 
+                where: { email } 
+            })
             if (userFound) {
                 if (userFound.password === password) {
-                    res.status(200).json(userFound);
+                    if(decryptPwd(password,userFound.password)){
+                        const access_token = tokenGenerator(userFound)
+                        res.status(200).json({access_token});
+                    }
                 }
                 else { res.status(403).json({ message: "wrong password" }) }
             }
